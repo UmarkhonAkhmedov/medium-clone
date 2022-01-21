@@ -3,12 +3,24 @@ import { sanityClient, urlFor } from "../../sanity"
 import { GetStaticProps } from "next"
 import { Post } from "../../typings"
 import PortableText from "react-portable-text"
+import { useForm, SubmitHandler } from "react-hook-form"
 
 interface Props {
   post: Post;
 }
+interface IFromInput {
+  _id: string;
+  name: string;
+  email: string;
+  comment: string;
+}
 
 function Post({post}: Props) {
+  const {register, handleSubmit, formState: {errors}} = useForm<IFromInput>()
+  const onSubmit: SubmitHandler<IFromInput> = async (data) => {
+    
+  }
+
   return (
     <main>
       <Header/>
@@ -45,6 +57,43 @@ function Post({post}: Props) {
           />
         </div>
       </article>
+
+      <hr className="max-w-lg my-5 mx-auto border border-yellow-500"/>
+
+      <form className="flex flex-col p-5 max-w-2xl mx-auto mb-10" onSubmit={handleSubmit(onSubmit)}>
+        <h3 className="text-sm text-yellow-500">Enjoyed this article</h3>
+        <h4 className="text-3xl font-bold">Leave a comment below!</h4>
+        <hr className="py-3 mt-2"/>
+
+        <input {...register("_id")} type="hidden" name="_id" value={post._id}/>
+
+        <label className="block mb-5">
+          <span className="text-gray-700">Name</span>
+          <input {...register("name", {required: true})} className="shadow border rounded py-2 px-3 form-input mt-1 block w-full ring-yellow-500 outline-none focus:ring" placeholder="John Appleseed" type="text"/>
+        </label>
+        <label className="block mb-5">
+          <span className="text-gray-700">Email</span>
+          <input {...register("email", {required: true})} className="shadow border rounded py-2 px-3 form-input mt-1 block w-full ring-yellow-500 outline-none focus:ring" placeholder="johnapp@gmail.com" type="email"/>
+        </label>
+        <label className="block mb-5">
+          <span className="text-gray-700">Comment</span>
+          <textarea {...register("comment", {required: true})} className="shadow border rounded py-2 px-3 form-textarea mt-1 block w-full ring-yellow-500 outline-none focus:ring" placeholder="Enter a comment" rows={8}/>
+        </label>
+
+        <div className="flex flex-col p-5">
+          {errors.name && (
+            <span className="text-red-500">- The Name Field is required</span>
+          )}
+          {errors.email && (
+            <span className="text-red-500">- The Email Field is required</span>
+          )}
+          {errors.comment && (
+            <span className="text-red-500">- The Comment Field is required</span>
+          )}
+        </div>
+
+        <input className="shadow bg-yellow-500 hover:bg-yellow-400 focus:shadow-outline focus:outline-none text-white font-bold py-2 rounded cursor-pointer" type="submit"/>
+      </form>
       
     </main>
   );
