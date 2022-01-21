@@ -4,6 +4,7 @@ import { GetStaticProps } from "next"
 import { Post } from "../../typings"
 import PortableText from "react-portable-text"
 import { useForm, SubmitHandler } from "react-hook-form"
+import { useState } from "react";
 
 interface Props {
   post: Post;
@@ -16,9 +17,17 @@ interface IFromInput {
 }
 
 function Post({post}: Props) {
+  const [submitted, setSubmitted] = useState(false)
   const {register, handleSubmit, formState: {errors}} = useForm<IFromInput>()
   const onSubmit: SubmitHandler<IFromInput> = async (data) => {
-    
+    fetch('/api/createComment', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }).then(() => {
+      setSubmitted(true)
+    }).catch((err) => {
+      setSubmitted(false)
+    })
   }
 
   return (
@@ -60,7 +69,13 @@ function Post({post}: Props) {
 
       <hr className="max-w-lg my-5 mx-auto border border-yellow-500"/>
 
-      <form className="flex flex-col p-5 max-w-2xl mx-auto mb-10" onSubmit={handleSubmit(onSubmit)}>
+      {submitted ? (
+        <div className="flex flex-col p-10 my-10 bg-yellow-500 text-white max-w-2xl mx-auto">
+          <h3 className="text-3xl font-bold">Thank you for submitting your comment!</h3>
+          <p>Once it has been approved, it will appear below!</p>
+        </div>
+      ): (
+        <form className="flex flex-col p-5 max-w-2xl mx-auto mb-10" onSubmit={handleSubmit(onSubmit)}>
         <h3 className="text-sm text-yellow-500">Enjoyed this article</h3>
         <h4 className="text-3xl font-bold">Leave a comment below!</h4>
         <hr className="py-3 mt-2"/>
@@ -94,7 +109,19 @@ function Post({post}: Props) {
 
         <input className="shadow bg-yellow-500 hover:bg-yellow-400 focus:shadow-outline focus:outline-none text-white font-bold py-2 rounded cursor-pointer" type="submit"/>
       </form>
+      )}
       
+      <div className="flex flex-col p-10 my-10 max-w-2xl mx-auto shadow-yellow-500 shadow space-y-2">
+        <h3 className="text-4xl">Comments</h3>
+        <hr className="pb-2"/>
+        {post.comments.map((comment) => (
+          <div key={comment._id}>
+            <p>
+              <span className="text-yellow-500">{comment.name}: </span>{comment.comment}
+            </p>
+          </div>
+        ))}
+      </div>
     </main>
   );
 }
@@ -125,7 +152,7 @@ export const getStaticPaths = async () => {
 
 export const getStaticProps: GetStaticProps = async ({params}) => {
   const query =`
-    *[_type == "post" && slug.current == $slug][0]{
+    *[_type == "post" && slug.current == "my-first-post"][0]{
       _id,
       _createdAt,
       title,
@@ -133,6 +160,10 @@ export const getStaticProps: GetStaticProps = async ({params}) => {
         name,
         image
       },
+      'comments': *[
+        _type=="comment" && post._ref==^._id &&
+        approved == true
+      ],
       description,
       mainImage,
       slug,
